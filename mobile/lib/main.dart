@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'models/deck_button.dart';
 import 'services/discovery_service.dart';
 
 void main() {
@@ -14,7 +15,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: DeckScreen());
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: DeckScreen(),
+    );
   }
 }
 
@@ -28,9 +32,19 @@ class DeckScreen extends StatefulWidget {
 class _DeckScreenState extends State<DeckScreen> {
   WebSocketChannel? channel;
 
+  bool connected = false;
+
   String status = "Searching for server...";
 
-  bool connected = false;
+  final List<DeckButton> buttons = [
+    DeckButton(title: "PLAY", action: "media_play_pause"),
+
+    DeckButton(title: "VOL+", action: "volume_up"),
+
+    DeckButton(title: "VOL-", action: "volume_down"),
+
+    DeckButton(title: "MUTE", action: "discord_mute"),
+  ];
 
   @override
   void initState() {
@@ -72,12 +86,12 @@ class _DeckScreenState extends State<DeckScreen> {
     }
   }
 
-  void sendPlayPause() {
+  void sendAction(String action) {
     if (!connected || channel == null) {
       return;
     }
 
-    final packet = {"action": "media_play_pause"};
+    final packet = {"action": action};
 
     channel!.sink.add(jsonEncode(packet));
   }
@@ -87,31 +101,39 @@ class _DeckScreenState extends State<DeckScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
 
+      appBar: AppBar(backgroundColor: Colors.black, title: Text(status)),
+
       body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
 
-          children: [
-            Text(
-              status,
-              style: const TextStyle(color: Colors.white, fontSize: 22),
+          child: GridView.builder(
+            itemCount: buttons.length,
+
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+
+              childAspectRatio: 1,
             ),
 
-            const SizedBox(height: 40),
+            itemBuilder: (context, index) {
+              final button = buttons[index];
 
-            Center(
-              child: SizedBox(
-                width: 220,
-                height: 220,
+              return ElevatedButton(
+                onPressed: connected ? () => sendAction(button.action) : null,
 
-                child: ElevatedButton(
-                  onPressed: connected ? sendPlayPause : null,
+                child: Text(
+                  button.title,
+                  textAlign: TextAlign.center,
 
-                  child: const Text("PLAY", style: TextStyle(fontSize: 32)),
+                  style: const TextStyle(fontSize: 20),
                 ),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
       ),
     );
