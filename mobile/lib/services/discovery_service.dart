@@ -1,38 +1,54 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:udp/udp.dart';
 
 class DiscoveryService {
+  static const int udpPort = 9999;
+
   static Future<String?> discoverServer() async {
-    final receiver = await UDP.bind(Endpoint.any(port: Port(9999)));
+    final receiver = await UDP.bind(Endpoint.any(port: Port(udpPort)));
 
     print("Listening for discovery packets...");
 
-    try {
-      final datagram = await receiver
-          .asStream()
-          .timeout(const Duration(seconds: 10))
-          .first;
+    final completer = Completer<String?>();
 
-      final data = utf8.decode(datagram!.data);
+    late StreamSubscription sub;
 
-      final json = jsonDecode(data);
+    sub = receiver.asStream().listen((datagram) {
+      if (datagram == null) return;
 
-      print("FOUND SERVER:");
-      print(json);
+      try {
+        final raw = utf8.decode(datagram.data);
+        final jsonData = jsonDecode(raw);
 
-      final ip = datagram.address.address;
+        print("FOUND SERVER:");
+        print(jsonData);
 
-      final port = json["ws_port"];
+        final ip = datagram.address.address;
+        final port = jsonData["ws_port"];
 
-      receiver.close();
+        final url = "ws://$ip:$port";
 
-      return "ws://$ip:$port";
-    } on TimeoutException {
-      receiver.close();
+        print("Resolved URL: $url");
 
-      return null;
-    }
+        sub.cancel();
+        receiver.close();
+
+        if (!completer.isCompleted) {
+          completer.complete(url);
+        }
+      } catch (e) {
+        print("Discovery parse error: $e");
+      }
+    });
+
+    return completer.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        sub.cancel();
+        receiver.close();
+        return null;
+      },
+    );
   }
 }

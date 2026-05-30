@@ -39,9 +39,9 @@ class _DeckScreenState extends State<DeckScreen> {
   final List<DeckButton> buttons = [
     DeckButton(title: "PLAY", action: "media_play_pause"),
 
-    DeckButton(title: "VOL+", action: "volume_up"),
-
     DeckButton(title: "VOL-", action: "volume_down"),
+
+    DeckButton(title: "VOL+", action: "volume_up"),
 
     DeckButton(title: "MUTE", action: "discord_mute"),
   ];

@@ -1,11 +1,12 @@
 import keyboard
 
+ACTION_MAP = {
+    "media_play_pause": "play/pause media",
+    "volume_down": "volume down",
+    "volume_up": "volume up",
+}
+
 def handle(action):
-    if action == "media_play_pause":
-        keyboard.send("play/pause media")
-
-    elif action == "volume_up":
-        keyboard.send("volume up")
-
-    elif action == "volume_down":
-        keyboard.send("volume down")
+    key = ACTION_MAP.get(action)
+    if key:
+        keyboard.send(key)
